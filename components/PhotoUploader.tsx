@@ -135,8 +135,8 @@ export default function PhotoUploader({ photos, onChange }: Props) {
   );
 }
 
-const MAX_DIM = 1024;
-const JPEG_QUALITY = 0.85;
+const MAX_DIM = 768;
+const JPEG_QUALITY = 0.7;
 
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
