@@ -3,6 +3,7 @@ import OpenAI from 'openai';
 import { buildSystemPrompt, type ProfileWithMeta } from '@/lib/prompts';
 import { listSources } from '@/lib/db';
 import type { StyleProfile } from '@/lib/style-profile';
+import { formatPlaceInfoForPrompt, type PlaceInfo } from '@/lib/naver-place';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -12,6 +13,7 @@ type PhotoPayload = { dataUrl: string; memo: string };
 type Body = {
   placeName: string;
   extraNotes?: string;
+  placeInfo?: PlaceInfo | null;
   photos: PhotoPayload[];
 };
 
@@ -27,10 +29,12 @@ export async function POST(req: NextRequest) {
     return new Response('Invalid JSON', { status: 400 });
   }
 
-  const { placeName, extraNotes, photos } = body;
+  const { placeName, extraNotes, placeInfo, photos } = body;
   if (!placeName || !photos || photos.length === 0) {
     return new Response('placeName과 photos는 필수입니다', { status: 400 });
   }
+
+  const placeInfoBlock = placeInfo ? formatPlaceInfoForPrompt(placeInfo) : '';
 
   let profiles: ProfileWithMeta[] = [];
   try {
@@ -56,6 +60,7 @@ export async function POST(req: NextRequest) {
       type: 'text',
       text:
         `장소: ${placeName}` +
+        (placeInfoBlock ? `\n\n[네이버 플레이스 정보]\n${placeInfoBlock}` : '') +
         (extraNotes ? `\n\n추가 메모: ${extraNotes}` : '') +
         `\n\n아래에 사진 ${photos.length}장이 순서대로 제공됩니다. 이 순서대로 [사진 N] 마커를 배치해주세요.`,
     },
